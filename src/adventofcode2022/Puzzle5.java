@@ -90,7 +90,24 @@ public class Puzzle5 implements AdventPuzzle {
             boxStacks[to].push(boxStacks[from].pop());
         }
     }
-
+     public void moveBoxesInSameOrder(int numBoxesToMove, int from, int to) throws Exception {
+        if (boxStacks[from] == null || boxStacks[to] == null) {
+            throw new Exception("Invalid Box Stack Number:" + from + " | " + to);
+        }
+        if (numBoxesToMove > boxStacks[from].size()) {
+            throw new Exception("Trying to move more boxes than contained in stack " + from + " (" + numBoxesToMove + " boxes) of " + boxStacks[from].size());
+        }
+        //Easiest way to do is keep the same move pattern but do it twice so it ends up in the same order
+        Stack<String> helperStack = new Stack<>();
+        for (int i = 0; i < numBoxesToMove; i++) {
+            helperStack.push(boxStacks[from].pop());
+        }
+        for (int i = 0; i < numBoxesToMove; i++) {
+            boxStacks[to].push(helperStack.pop());
+        }
+    }
+    
+    
     public int solvePart1(InputStream input) throws IOException, Exception {
         int sum = 0;
         String line = "";
@@ -121,22 +138,54 @@ public class Puzzle5 implements AdventPuzzle {
         return sum;
     }
 
+    public int solvePart2(InputStream input) throws IOException, Exception {
+        int sum = 0;
+        String line = "";
+        BufferedReader br = new BufferedReader(new InputStreamReader(input));
+        HashMap<Integer, Integer> charCount = new HashMap<>(52);
+        //Pass this bufferedReader so that the cursor position in the file is kept in it's own state and we don't need to seek
+        parseInitialBoxState(br, input);
+        //Parse the moves that will be made
+        final Pattern intValues = Pattern.compile("(\\d+)");
+        while ((line = br.readLine()) != null) {
+            if (line.length() == 0) {
+                continue;
+            }
+            Matcher m = intValues.matcher(line);
+            int[] moveInfo = new int[3];
+            int index = 0;
+            while (m.find()) {
+                moveInfo[index++] = Integer.parseInt(m.group());
+            }
+            //make the move (subtract 1 because stacks are indexed from 1 in the input and from 0 in Java
+            moveBoxesInSameOrder(moveInfo[0], moveInfo[1] - 1, moveInfo[2] - 1);
+        }
+        String topBoxes = "";
+        for (int i = 0; i < totalNumberOfStacks; i++) {
+            topBoxes += !boxStacks[i].isEmpty() ? boxStacks[i].pop() : "_";
+        }
+        System.out.println("The top crates are: " + topBoxes);
+        return sum;
+    }
+
     /**
      * Initial thoughts:
      * Probably the trickiest part of the puzzle is parsing the initial stacks into a workable format with the proper stack indexes for the move,
-     * whitespace is significant in the lines depicting this initial state. 
+     * whitespace is significant in the lines depicting this initial state.
      * The moves should be simple enough to parse and implement with multiples stacks
-     * 
+     *
      * Implementation Remarks:
      * 2 separate parsing phases for the input, with different strategies for each. A bit fiddly to parse the boxes drawing but not so hard;
-     * Parsing the moves is simple enough since only the numbers are relevant for the solution 
-     * 
+     * Parsing the moves is simple enough since only the numbers are relevant for the solution
+     *
+     * Part 2 was simple to implement by using yet another stack to keep the ordering.
+     * The hardest part was not being an idiot and uncommenting the solvePart2 line on the solve function before getting the solution into the site instead of trying the solution from part1 repeatedly.
      * Stacks are nice to implement problems base on stacks of this. Who would've guessed.
      */
     @Override
     public int solve(InputStream input) throws IOException, Exception {
-        return solvePart1(input);
-//        return solvePart2(input);
+        //return solvePart1(input);
+        return solvePart2(input);
     }
 
 }

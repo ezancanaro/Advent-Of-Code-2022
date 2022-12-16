@@ -34,8 +34,10 @@ public class AdventOfCode2022 {
 //        solvePuzzle(new Puzzle3(), "inputs/puzzle3.txt");
 //        System.out.println("\n-----------Puzzle 4---------------\n");
 //        solvePuzzle(new Puzzle4(), "inputs/puzzle4.txt");
-        System.out.println("\n-----------Puzzle 5---------------\n");
-        solvePuzzle(new Puzzle5(), "inputs/puzzle5.txt");
+//        System.out.println("\n-----------Puzzle 5---------------\n");
+//        solvePuzzle(new Puzzle5(), "inputs/puzzle5.txt");
+        System.out.println("\n-----------Puzzle 6---------------\n");
+        solvePuzzle(new Puzzle6(), "inputs/puzzle6.txt");
 //        solveP1();
 //        solveP2();
 //        System.out.println("a:" + Character.getNumericValue('a') + ",z:" + Character.getNumericValue('z')
