@@ -18,7 +18,14 @@ public class AdventOfCode2022 {
         System.out.println("Example Solution:");
         puzzle.solve(puzzle.example());
         System.out.println("Puzzle Solution:");
-        return puzzle.solve(AdventPuzzle.getInput(inputFileLocation));
+        int i = 0;
+        try {
+            i = puzzle.solve(AdventPuzzle.getInput(inputFileLocation));
+        } catch (FileNotFoundException fnf) {
+            System.out.println("File " + inputFileLocation
+                    + " not found");
+        }
+        return i;
     }
 
     /**
@@ -36,8 +43,14 @@ public class AdventOfCode2022 {
 //        solvePuzzle(new Puzzle4(), "inputs/puzzle4.txt");
 //        System.out.println("\n-----------Puzzle 5---------------\n");
 //        solvePuzzle(new Puzzle5(), "inputs/puzzle5.txt");
-        System.out.println("\n-----------Puzzle 6---------------\n");
-        solvePuzzle(new Puzzle6(), "inputs/puzzle6.txt");
+//        System.out.println("\n-----------Puzzle 6---------------\n");
+//        solvePuzzle(new Puzzle6(), "inputs/puzzle6.txt");
+//        System.out.println("\n-----------Puzzle 7---------------\n");
+//        solvePuzzle(new Puzzle7(), "inputs/puzzle7.txt");
+//        System.out.println("\n-----------Puzzle 8---------------\n");
+//        solvePuzzle(new Puzzle8(), "inputs/puzzle8.txt");
+        System.out.println("\n-----------Puzzle 9---------------\n");
+        solvePuzzle(new Puzzle9(), "inputs/puzzle9.txt");
 //        solveP1();
 //        solveP2();
 //        System.out.println("a:" + Character.getNumericValue('a') + ",z:" + Character.getNumericValue('z')
