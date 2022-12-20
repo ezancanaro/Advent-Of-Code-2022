@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -72,6 +73,8 @@ public class Puzzle11 implements AdventPuzzle {
         }
     }
 
+    private HashMap<Integer, Integer> divisors = new HashMap<>();
+
     private class Monkey {
 
         //A list of items held by this monkey boy
@@ -93,19 +96,28 @@ public class Puzzle11 implements AdventPuzzle {
             this.testAndAct = testAndAct;
         }
 
+        public int getDoubleExponent(Double number) {
+            String numberAsString = String.valueOf(number);
+            int indexOfE = numberAsString.indexOf('E') + 1;
+            //if there is no dot in the number representation, exponent is 1
+            if (indexOfE > 0) {
+                try {
+                    return Integer.parseInt(numberAsString.substring(indexOfE, numberAsString.length()));
+                } catch (NumberFormatException nfe) {
+                    System.exit(1);
+                }
+            }
+            return 1;
+        }
+
         public void takeTurn() {
             //The monkey always throws it's item so we can remove the first item of the queue with no worries
             Double item = this.heldItems.remove();
             itemsInspected++;
             printThisThing("\tMonkey inspects an item with a worry level of " + item);
-//            if (this.operation.apply(item).equals(Global.Infinity)) {
-//                System.out.println("FUCKING OVERFLOW ON : " + item);
-//                System.out.println("Max Double:" + Double.MAX_VALUE);
-//                System.out.println("Max Double:" + Double.MAX_VALUE);
-//                System.exit(1);
-//            }
             Double newWorryLevel = this.operation.apply(item);
             printThisThing("\t\tWorry Level increased to " + newWorryLevel);
+            int worryLevelExponent = Math.getExponent(newWorryLevel);
             newWorryLevel = reduceWorries ? (int) Math.floor(newWorryLevel / 3) : newWorryLevel;
             printThisThing("\t\tMonkey gets bored with item. Worry level is divided by 3 to " + newWorryLevel);
             this.testAndAct.accept(newWorryLevel);
@@ -114,7 +126,6 @@ public class Puzzle11 implements AdventPuzzle {
         public void catchItem(Double item) {
             this.heldItems.add(item);
         }
-
     }
 
     ArrayList<Monkey> monkeyList;
@@ -147,22 +158,23 @@ public class Puzzle11 implements AdventPuzzle {
             if (debugApply) {
                 System.out.println(("old".equals(left) ? t : Double.parseDouble(left)) + " + " + ("old".equals(right) ? t : Double.parseDouble(right)));
             }
-            return ("old".equals(left) ? t : Double.parseDouble(left))
-                    + ("old".equals(right) ? t : Double.parseDouble(right));
+            return (("old".equals(left) ? t : Double.parseDouble(left))
+                    + ("old".equals(right) ? t : Double.parseDouble(right))) % commonMod;
         })
                 : ((t)
                 -> {
             if (debugApply) {
                 System.out.println(("old".equals(left) ? t : Double.parseDouble(left)) + " * " + ("old".equals(right) ? t : Double.parseDouble(right)));
             }
-            return ("old".equals(left) ? t : Double.parseDouble(left))
-                    * ("old".equals(right) ? t : Double.parseDouble(right));
+            return (("old".equals(left) ? t : Double.parseDouble(left))
+                    * ("old".equals(right) ? t : Double.parseDouble(right))) % commonMod;
         });
         return f;
     }
 
     public Predicate<Double> parsePredicateFromString(String line) {
         final Double divisor = getIntsFromString(line).getFirst();
+        divisors.putIfAbsent(divisor.intValue(), 1);
         return ((t) -> t % divisor == 0);
 
     }
@@ -274,12 +286,21 @@ public class Puzzle11 implements AdventPuzzle {
 
     boolean debugApply = false;
 
+    Double commonMod = 1d;
+
     //X = middle of the sprite, sprite always has 3 pixels
     public int solvePart2(InputStream input) throws IOException, Exception {
         int sum = 0;
+        
+        divisors = new HashMap<>();//53690450268
         parseMonkeyDescriptions(input);
         reduceWorries = false;
         printMonkeyAction = false;
+        commonMod = 1d;
+        for (Integer div : divisors.keySet()) {
+            commonMod *= div;
+        }
+
 //        debugApply = true;
         for (int i = 1; i <= 10000; i++) {
 //        for (int i = 1; i <= 20; i++) { //simulate only 20 rounds
@@ -318,7 +339,11 @@ public class Puzzle11 implements AdventPuzzle {
      * Using functional interfaces to create lambdas make expressing the monkey functions a lot easier than it looked
      *
      * Part 2:
-     * Fucking overflow man
+     * Fucking overflow man.
+     * Need to actually think about this problem in order to avoid the overflow when multiplying the worry levels.
+     * There's some obvious math in it but I simply don't see it right now.
+     * 
+     * SO I gave up after spending close to an hour trying shit and looked stuff up. It was modulo. 
      */
     @Override
     public int solve(InputStream input) throws IOException, Exception {
