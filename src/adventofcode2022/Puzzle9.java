@@ -7,6 +7,8 @@ package adventofcode2022;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -24,14 +26,14 @@ public class Puzzle9 implements AdventPuzzle {
     public InputStream example() {
         return new ByteArrayInputStream(
                 (""
-                        + "R 4\n"
-                        + "U 4\n"
-                        + "L 3\n"
-                        + "D 1\n"
-                        + "R 4\n"
-                        + "D 1\n"
-                        + "L 5\n"
-                        + "R 2"
+                        + "R 5\n"
+                        + "U 8\n"
+                        + "L 8\n"
+                        + "D 3\n"
+                        + "R 17\n"
+                        + "D 10\n"
+                        + "L 25\n"
+                        + "U 20"
                         + "")
                         .getBytes());
     }
@@ -47,9 +49,12 @@ public class Puzzle9 implements AdventPuzzle {
     //Just keep the spots visitedByTheTail. Used LinkedHashMap for the ordering but it's unnecessary
     LinkedHashMap<String, String> visitedSpots = new LinkedHashMap<>();
     char[][] sillyBoard = new char[10][10];
+    File f = new File("check");
+//added propagateKnots to remake part2
 
-    public boolean moveTheRope(int xSteps, int ySteps) throws IOException, Exception {
+    public boolean moveTheRope(int xSteps, int ySteps, boolean propagateKnots) throws IOException, Exception {
         boolean movementIsFine = true;
+        boolean tailMoved = false;
         for (int i = 0; i < Math.abs(xSteps) && movementIsFine; i++) {
             int stepDir = xSteps < 0 ? -1 : 1;
             headX += stepDir;
@@ -61,11 +66,20 @@ public class Puzzle9 implements AdventPuzzle {
                 if (Math.abs(deltaY) >= 1) {
                     tailY += (headY > tailY ? 1 : -1);
                 }
+                tailMoved = true;
             }
-            visitedSpots.putIfAbsent(tailX + "_" + tailY, headX + "_" + headY);
-            //            allVisitedSpots.add("H:" + headX + "_" + headY + " | T:" + tailX + "_" + tailY);
+            if (!propagateKnots) {
+                visitedSpots.putIfAbsent(tailX + "_" + tailY, headX + "_" + headY);
+                movementIsFine = checkAndPrintPositions();
+            } else {
+                notsX[0] = headX;
+                notsY[0] = headY;
+                if (tailMoved) {
+                    movementIsFine = propagateKnotPosition();
+                }
+            }
+//            allVisitedSpots.add("H:" + headX + "_" + headY + " | T:" + tailX + "_" + tailY);
             //            printSillyBoard();
-            movementIsFine = checkAndPrintPositions();
         }
         for (int i = 0; i < Math.abs(ySteps) && movementIsFine; i++) {
             int stepDir = ySteps < 0 ? -1 : 1;
@@ -77,17 +91,132 @@ public class Puzzle9 implements AdventPuzzle {
                 if (Math.abs(deltaX) >= 1) {
                     tailX += (headX > tailX ? 1 : -1);
                 }
+                tailMoved = true;
             }
-            visitedSpots.putIfAbsent(tailX + "_" + tailY, headX + "_" + headY);
+            if (!propagateKnots) {
+                visitedSpots.putIfAbsent(tailX + "_" + tailY, headX + "_" + headY);
+                movementIsFine = checkAndPrintPositions();
+            } else {
+                notsX[0] = headX;
+                notsY[0] = headY;
+                if (tailMoved) {
+                    movementIsFine = propagateKnotPosition();
+
+                }
+
+            }
 //            allVisitedSpots.add("H:" + headX + "_" + headY + " | T:" + tailX + "_" + tailY);
 //            printSillyBoard();
-            movementIsFine = checkAndPrintPositions();
         }
         return movementIsFine;
     }
 
+    public boolean propagateKnotPosition() {
+        System.out.println("        -)-)-)-(-(-(-");
+        for (int i = notsX.length - 1; i > 1; i--) {
+            notsX[i] = notsX[i - 1];
+            notsY[i] = notsY[i - 1];
+        }
+        notsX[1] = tailX;
+        notsY[1] = tailY;
+        for (int i = 1; i < notsX.length; i++) {
+            if (!checkAndPrintPositions(i)) {
+                return false;
+            }
+        }
+
+        if (visitedSpots.putIfAbsent(notsX[9] + "_" + notsY[9], notsX[0] + "_" + notsX[0]) == null) {
+            System.out.println("NEW KEY:" + notsX[9] + "_" + notsY[9]);
+            try {
+                FileWriter fw = new FileWriter(f, true);
+                fw.write("New key: " + notsX[9] + "_" + notsY[9] + "\n");
+                fw.flush();
+                fw.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        };
+        return true;
+    }
+
+    //Creating a step class to make it easier to see which decision was wrong when movement fails
+    public class Step {
+
+        int xStep;
+        int yStep;
+
+        private Step(int x, int y) {
+            this.xStep = x;
+            this.yStep = y;
+        }
+    }
+
+    public Step moveStraightRight() {
+        return new Step(1, 0);
+    }
+
+    public Step moveStraightLeft() {
+        return new Step(-1, 0);
+    }
+
+    public Step moveStraightUp() {
+        return new Step(0, 1);
+    }
+
+    public Step moveStraightDown() {
+        return new Step(0, -1);
+    }
+
+    public Step moveDiagonalUpRight() {
+        return new Step(1, 1);
+    }
+
+    public Step moveDiagonalDownRight() {
+        return new Step(1, -1);
+    }
+
+    public Step moveDiagonalUpLeft() {
+        return new Step(-1, 1);
+    }
+
+    public Step moveDiagonalDownLeft() {
+        return new Step(-1, -1);
+    }
+
+    public Step stayStill() {
+        return new Step(0, 0);
+    }
+
+    public Step chooseKnotMovement(int leadingX, int leadingY, int knotX, int knotY, int currentKnot) {
+
+        double deltaX = Math.sqrt(Math.pow((leadingX - knotX), 2));
+        double deltaY = Math.sqrt(Math.pow((leadingY - knotY), 2));
+        //if both coordinates are at most 1 step away, stay still my beating heart
+        if (deltaX <= 1 && deltaY <= 1) {
+            return stayStill();
+        }
+        //IF only X is drifting, move in the X direction
+        if (deltaX > 1 && deltaY == 0) {
+            return leadingX < knotX ? moveStraightLeft() : moveStraightRight();
+        }
+        //IF only Y is drifting, move in the Y direction
+        if (deltaY > 1 && deltaX == 0) {
+            return leadingY < knotY ? moveStraightDown() : moveStraightUp();
+        }
+        //IF both coordinates drifted, choose which diagonal to take based on the X position
+        if (leadingX > knotX) {
+            return leadingY > knotY ? moveDiagonalUpRight() : moveDiagonalDownRight();
+        }
+        if (leadingX < knotX) {
+            return leadingY > knotY ? moveDiagonalUpLeft() : moveDiagonalDownLeft();
+        }
+        //this should never happen if we mapped all possible movements
+        System.out.println("ERROR: UNMAPPED MOVEMENT:____" + deltaX + "," + deltaY);
+        return stayStill();
+    }
+
     /**
-     * Move the knots recursively, starting from the knot 1. FUCKING ANNOYING
+     * Move the knots recursively, starting from the knot 1.
      *
      * @param currentKnot
      * @param xSteps
@@ -95,34 +224,16 @@ public class Puzzle9 implements AdventPuzzle {
      * @return
      */
     public boolean moveTheKnot(int currentKnot, int xSteps, int ySteps) {
-        int deltaX = 0;
-        int deltaY = 0;
-        if (xSteps != 0) {
-            deltaX = Math.abs(notsX[currentKnot - 1] - notsX[currentKnot]);
-            deltaY = Math.abs(notsY[currentKnot - 1]) - Math.abs(notsY[currentKnot]);
-            if (deltaX > 1) {
-                notsX[currentKnot] += xSteps;
-                if (Math.abs(deltaY) >= 1) {
-                    notsY[currentKnot] += (notsY[currentKnot - 1] > notsY[currentKnot] ? 1 : -1);
-                }
-            }
-        }
-        if (ySteps != 0) {
-            deltaX = Math.abs(notsX[currentKnot - 1]) - Math.abs(notsX[currentKnot]);
-            deltaY = Math.abs(notsY[currentKnot - 1] - notsY[currentKnot]);
-            if (deltaY > 1) {
-                notsY[currentKnot] += ySteps;
-                if (Math.abs(deltaX) >= 1) {
-                    notsX[currentKnot] += (notsX[currentKnot - 1] > notsX[currentKnot] ? 1 : -1);
-                }
-            }
-        }
+
+        Step stepToTake = chooseKnotMovement(notsX[currentKnot - 1], notsY[currentKnot - 1], notsX[currentKnot], notsY[currentKnot], currentKnot);
+        notsX[currentKnot] += stepToTake.xStep;
+        notsY[currentKnot] += stepToTake.yStep;
         if (!checkAndPrintPositions(currentKnot)) {
-            System.out.println("Failed for Deltas X/Y:" + deltaX + "/" + deltaY);
+            System.out.println("Failed with Step=" + stepToTake.xStep + " " + stepToTake.yStep);
             return false;
         }
         if (currentKnot == notsX.length - 1) {
-            visitedSpots.putIfAbsent(notsX[currentKnot - 1] + "_" + notsY[currentKnot], notsX[0] + "_" + notsY[0]);
+            visitedSpots.putIfAbsent(notsX[currentKnot] + "_" + notsY[currentKnot], notsX[0] + "_" + notsY[0]);
             return true;
         }
         return moveTheKnot(currentKnot + 1, xSteps, ySteps);
@@ -215,7 +326,7 @@ public class Puzzle9 implements AdventPuzzle {
             }
             System.out.println("Moving " + line + " X:" + xSteps + " Y:" + ySteps);
             //Check the resulting position and stop the run to find out where it's going wrong
-            if (!moveTheRope(xSteps, ySteps)) {
+            if (!moveTheRope(xSteps, ySteps, false)) {
                 break;
             }
         }
@@ -226,6 +337,14 @@ public class Puzzle9 implements AdventPuzzle {
     }
 
     public int solvePart2(InputStream input) throws IOException, Exception {
+        try {
+            FileWriter fw = new FileWriter(f, false);
+            fw.write("AGAIN!: " + notsX[9] + "_" + notsY[9] + "\n");
+            fw.flush();
+            fw.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
         int sum = 0;
         notsX = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         notsY = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -248,15 +367,17 @@ public class Puzzle9 implements AdventPuzzle {
                     xSteps = Integer.parseInt(moveToMake[1]);
                     break;
                 case "U":
-                    ySteps = -Integer.parseInt(moveToMake[1]);
+                    ySteps = Integer.parseInt(moveToMake[1]);
                     break;
                 case "D":
-                    ySteps = Integer.parseInt(moveToMake[1]);
+                    ySteps = -Integer.parseInt(moveToMake[1]);
                     break;
             }
             System.out.println("Moving " + line + " X:" + xSteps + " Y:" + ySteps);
             //Check the resulting position and stop the run to find out where it's going wrong
+            //6357 is too high!
             if (!moveTheRopeWithMultipleKnots(xSteps, ySteps)) {
+//            if (!moveTheRope(xSteps, ySteps, true)) {
                 System.out.println("FAILED");
                 break;
             }
@@ -278,9 +399,9 @@ public class Puzzle9 implements AdventPuzzle {
      * Got a bit confused when trying to implement the diagonal stepping though, as I kept insisting on using Math.abs(headX)-Math.abs(tailX) instead of just comparing using greater than
      *
      * Part 2:
-     * Got quite annoyed with this one.
-     * I kept thinking that the only eligible trees where the ones found on part 1, so I only summed the scores for those birches.
-     * Felt really silly when I just needed to do it for every tree in the grid (except the outer rign which will always give 0)
+     * It took me too long to figure out I could use the distance between 2 points calc to determine the movement. It's quite embarrassing really.
+     * I kept using the abs(x)-abs(x1) to calculate the distance but that obviously wont work because I haven't normalized the coordinates to be non-negative
+     * 
      */
     @Override
     public int solve(InputStream input) throws IOException, Exception {
